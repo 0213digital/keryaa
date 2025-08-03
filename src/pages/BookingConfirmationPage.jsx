@@ -1,50 +1,67 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AppContext } from '../contexts/AppContext';
-import { useTranslation } from '../contexts/LanguageContext';
-import { PartyPopper, Download } from 'lucide-react';
+import React from 'react';
+import { useLocation, Link } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useAppContext } from '../contexts/AppContext';
 
-// This function needs to be passed through props or context if it's not defined here.
-// For now, we assume it's passed via AppContext.
-export function BookingConfirmationPage({ params, generateInvoice }) {
-    const { navigate } = useContext(AppContext);
-    const { t } = useTranslation();
-    const { booking } = params;
-    const [isProcessing, setIsProcessing] = useState(false);
+const BookingConfirmationPage = () => {
+  const location = useLocation();
+  const { translations } = useLanguage();
+  const { userProfile } = useAppContext();
 
-    const handleDownload = async () => {
-        setIsProcessing(true);
-        await generateInvoice(booking, t);
-        setIsProcessing(false);
-    };
+  // Les données de la réservation sont passées via l'état de la navigation
+  const { vehicle, startDate, endDate, totalPrice } = location.state || {};
 
-    if (!booking) { // Handle case where user lands here directly
-        useEffect(() => { navigate('home'); }, [navigate]);
-        return null;
-    }
-
+  if (!vehicle) {
     return (
-        <div className="container mx-auto max-w-2xl py-16 px-4 text-center">
-            <div className="bg-white p-8 rounded-lg shadow-md">
-                <PartyPopper size={64} className="mx-auto text-green-500" />
-                <h1 className="text-3xl font-bold mt-4">{t('bookingConfirmedTitle')}</h1>
-                <p className="text-slate-500 mt-2 mb-8">{t('bookingConfirmedDesc')}</p>
-                
-                <div className="text-left border-t border-slate-200 pt-6 space-y-3">
-                    <h3 className="text-lg font-semibold">Booking Summary</h3>
-                    <div className="flex justify-between"><span>Vehicle:</span><span className="font-medium">{booking.vehicles.make} {booking.vehicles.model}</span></div>
-                    <div className="flex justify-between"><span>{t('pickup')}</span><span className="font-medium">{new Date(booking.start_date).toLocaleDateString()}</span></div>
-                    <div className="flex justify-between"><span>{t('return')}</span><span className="font-medium">{new Date(booking.end_date).toLocaleDateString()}</span></div>
-                    <div className="flex justify-between font-bold"><span>{t('totalPrice')}</span><span>{booking.total_price.toLocaleString()} DZD</span></div>
-                </div>
-
-                <button onClick={handleDownload} disabled={isProcessing} className="mt-8 w-full bg-green-600 text-white py-3 rounded-md font-semibold hover:bg-green-700 flex items-center justify-center disabled:bg-green-400">
-                    <Download size={20} className="mr-2" />
-                    {isProcessing ? t('processing') : t('downloadInvoice')}
-                </button>
-                <button onClick={() => navigate('dashboard/bookings')} className="mt-4 w-full bg-indigo-600 text-white py-3 rounded-md font-semibold hover:bg-indigo-700">
-                    {t('backToMyBookings')}
-                </button>
-            </div>
-        </div>
+      <div className="container mx-auto text-center p-10">
+        <h1 className="text-2xl font-bold text-red-600">{translations.error}</h1>
+        <p className="mt-4">{translations.noBookingDataFound}</p>
+        <Link to="/" className="mt-6 inline-block bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+          {translations.backToHome}
+        </Link>
+      </div>
     );
-}
+  }
+
+  return (
+    <div className="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+      <div className="max-w-2xl w-full bg-white rounded-lg shadow-xl p-8">
+        <div className="text-center">
+          <svg className="mx-auto h-12 w-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <h1 className="mt-4 text-3xl font-extrabold text-gray-900">{translations.bookingConfirmed}</h1>
+          <p className="mt-2 text-gray-600">{translations.confirmationEmailSent} {userProfile?.email}</p>
+        </div>
+
+        <div className="mt-8 border-t border-gray-200 pt-8">
+          <h2 className="text-lg font-semibold text-gray-800">{translations.summary}</h2>
+          <div className="mt-4 bg-gray-50 p-4 rounded-lg">
+            <div className="flex justify-between py-2">
+              <span className="font-medium text-gray-700">{translations.vehicle}:</span>
+              <span className="font-semibold text-gray-900">{vehicle.make} {vehicle.model}</span>
+            </div>
+            <div className="flex justify-between py-2 border-t">
+              <span className="font-medium text-gray-700">{translations.pickupDate}:</span>
+              <span className="font-semibold text-gray-900">{new Date(startDate).toLocaleDateString()}</span>
+            </div>
+            <div className="flex justify-between py-2 border-t">
+              <span className="font-medium text-gray-700">{translations.returnDate}:</span>
+              <span className="font-semibold text-gray-900">{new Date(endDate).toLocaleDateString()}</span>
+            </div>
+            <div className="flex justify-between py-2 border-t text-xl">
+              <span className="font-medium text-gray-700">{translations.totalPrice}:</span>
+              <span className="font-bold text-blue-600">${totalPrice.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 text-center">
+          <Link to="/" className="bg-blue-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-600 transition duration-300">
+            {translations.backToHome}
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default BookingConfirmationPage;

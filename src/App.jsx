@@ -21,13 +21,13 @@ import SignUpPage from './pages/SignUpPage';
 import ProfilePage from './pages/dashboard/ProfilePage';
 import UserBookingsPage from './pages/dashboard/UserBookingsPage';
 
-// Importations des pages de l'agence (nouvelle structure)
+// Importations des pages de l'agence
 import AgencyDashboard from './pages/agency/AgencyDashboard';
 import AddVehiclePage from './pages/agency/AddVehiclePage';
 import EditVehiclePage from './pages/agency/EditVehiclePage';
 import AgencyBookingsPage from './pages/agency/AgencyBookingsPage';
 
-// Importations des pages d'administration (nouvelle structure + existantes)
+// Importations des pages d'administration
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UserManagementPage from './pages/admin/UserManagementPage';
 import UserDetailsPage from './pages/admin/UserDetailsPage';
@@ -51,20 +51,18 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignUpPage />} />
 
-                {/* Routes du tableau de bord utilisateur */}
+                {/* Routes imbriquées dans le tableau de bord */}
                 <Route path="/dashboard" element={<DashboardLayout />}>
                   <Route path="profile" element={<ProfilePage />} />
                   <Route path="bookings" element={<UserBookingsPage />} />
+                  <Route path="agency" element={<AgencyDashboard />} />
+                  <Route path="agency/bookings" element={<AgencyBookingsPage />} />
+                  <Route path="admin" element={<AdminDashboard />} />
                 </Route>
 
-                {/* Routes de l'agence */}
-                <Route path="/agency-dashboard" element={<AgencyDashboard />} />
+                {/* Autres routes (vous pouvez aussi les imbriquer si nécessaire) */}
                 <Route path="/add-vehicle" element={<AddVehiclePage />} />
                 <Route path="/edit-vehicle/:id" element={<EditVehiclePage />} />
-                <Route path="/agency-bookings" element={<AgencyBookingsPage />} />
-
-                {/* Routes de l'administration */}
-                <Route path="/admin-dashboard" element={<AdminDashboard />} />
                 <Route path="/admin/users" element={<UserManagementPage />} />
                 <Route path="/admin/users/:id" element={<UserDetailsPage />} />
                 <Route path="/admin/bookings" element={<AdminBookingsPage />} />

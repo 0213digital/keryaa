@@ -1,70 +1,72 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AppContext } from '../../contexts/AppContext';
-import { useTranslation } from '../../contexts/LanguageContext';
-import { DashboardLayout } from '../../components/DashboardLayout';
-import { Download } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabaseClient';
+import { useAppContext } from '../../contexts/AppContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
-export function UserBookingsPage({ generateInvoice }) {
-    const { t } = useTranslation();
-    const { supabase, session } = useContext(AppContext);
-    const [bookings, setBookings] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [processingInvoice, setProcessingInvoice] = useState(null);
+const UserBookingsPage = () => {
+  const { user } = useAppContext();
+  const { translations } = useLanguage();
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    const handleDownload = async (booking) => {
-        setProcessingInvoice(booking.id);
-        await generateInvoice(booking, t);
-        setProcessingInvoice(null);
+  useEffect(() => {
+    const fetchUserBookings = async () => {
+      if (user) {
+        setLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from('bookings')
+            .select('*, vehicles(*)') // Fetch booking and related vehicle info
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+          setBookings(data);
+        } catch (error) {
+          console.error('Error fetching user bookings:', error.message);
+        } finally {
+          setLoading(false);
+        }
+      }
     };
 
-    useEffect(() => {
-        const fetchBookings = async () => {
-            if (!supabase || !session) return;
-            setLoading(true);
-            const { data, error } = await supabase
-                .from('bookings')
-                .select('*, vehicles(*, agencies(*)), profiles(*)')
-                .eq('user_id', session.user.id)
-                .order('start_date', { ascending: false });
-            
-            if (error) {
-                console.error("Error fetching bookings:", error);
-            } else {
-                setBookings(data || []);
-            }
-            setLoading(false);
-        };
-        fetchBookings();
-    }, [supabase, session]);
+    fetchUserBookings();
+  }, [user]);
 
-    return (
-        <DashboardLayout title={t('dashboardTitle')} description={t('dashboardDesc')}>
-            <div className="space-y-6">
-                {loading ? <p>{t('loading')}</p> : bookings.length > 0 ? (
-                    bookings.map(booking => (
-                        <div key={booking.id} className="bg-white p-6 rounded-lg shadow-md flex flex-col md:flex-row items-start md:items-center gap-4">
-                            <img src={booking.vehicles.image_urls[0]} alt={booking.vehicles.model} className="w-full md:w-40 h-auto md:h-24 object-cover rounded-md"/>
-                            <div className="flex-grow">
-                                <h3 className="font-bold text-lg">{booking.vehicles.make} {booking.vehicles.model}</h3>
-                                <p className="text-sm text-slate-500">{booking.vehicles.agencies.agency_name}</p>
-                                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm">
-                                    <span><strong>{t('pickup')}:</strong> {new Date(booking.start_date).toLocaleDateString()}</span>
-                                    <span><strong>{t('return')}:</strong> {new Date(booking.end_date).toLocaleDateString()}</span>
-                                </div>
-                            </div>
-                            <div className="text-right w-full md:w-auto mt-4 md:mt-0">
-                                <p className="font-bold text-lg">{booking.total_price.toLocaleString()} DZD</p>
-                                <button onClick={() => handleDownload(booking)} disabled={processingInvoice === booking.id} className="mt-2 text-sm text-indigo-600 hover:underline flex items-center justify-end disabled:text-slate-400">
-                                    <Download size={14} className="mr-1" />
-                                    {processingInvoice === booking.id ? t('processing') : t('downloadInvoice')}
-                                </button>
-                            </div>
-                        </div>
-                    ))
-                ) : (
-                    <p>You have no bookings yet.</p>
-                )}
+  if (loading) {
+    return <div>{translations.loading}...</div>;
+  }
+
+  return (
+    <div className="p-6 bg-white rounded-lg shadow-md">
+      <h1 className="text-2xl font-bold mb-4">{translations.myBookings}</h1>
+      <div className="space-y-4">
+        {bookings.length > 0 ? (
+          bookings.map(booking => (
+            <div key={booking.id} className="flex flex-col md:flex-row items-center p-4 border rounded-lg gap-4">
+              <img src={booking.vehicles.image_url} alt={booking.vehicles.make} className="w-32 h-20 object-cover rounded-md"/>
+              <div className="flex-grow">
+                <h2 className="text-xl font-semibold">{booking.vehicles.make} {booking.vehicles.model}</h2>
+                <p className="text-sm text-gray-600">
+                  {translations.from} {new Date(booking.start_date).toLocaleDateString()} {translations.to} {new Date(booking.end_date).toLocaleDateString()}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-bold">${booking.total_price}</p>
+                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                  booking.status === 'confirmed' ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'
+                }`}>
+                  {translations[booking.status] || booking.status}
+                </span>
+              </div>
             </div>
-        </DashboardLayout>
-    );
-}
+          ))
+        ) : (
+          <p>{translations.noBookingsFound}</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default UserBookingsPage;
