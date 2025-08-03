@@ -1,58 +1,97 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from '../contexts/LanguageContext';
-import { Search, MapPin, Calendar } from 'lucide-react';
-// The problematic import of 'history' has been removed.
+import { useLanguage } from '../contexts/LanguageContext';
+import { wilayas } from '../data/geoAndCarData';
 
-export function SearchForm({ wilayas }) {
-    const navigate = useNavigate();
-    const { t } = useTranslation();
-    const [location, setLocation] = useState('');
-    const [pickupDate, setPickupDate] = useState('');
-    const [returnDate, setReturnDate] = useState('');
-    const today = new Date().toISOString().split('T')[0];
+const SearchForm = () => {
+  // State for pickup location
+  const [pickupWilaya, setPickupWilaya] = useState('');
+  const [pickupBaladiya, setPickupBaladiya] = useState('');
+  const [availablePickupBaladiyates, setAvailablePickupBaladiyates] = useState([]);
 
-    const handleSearch = (e) => {
-        e.preventDefault();
-        const searchParams = new URLSearchParams({
-            location,
-            from: pickupDate,
-            to: returnDate
-        }).toString();
-        navigate(`/search?${searchParams}`);
-    };
+  // State for return location
+  const [returnWilaya, setReturnWilaya] = useState('');
+  const [returnBaladiya, setReturnBaladiya] = useState('');
+  const [availableReturnBaladiyates, setAvailableReturnBaladiyates] = useState([]);
+  
+  const [pickupDate, setPickupDate] = useState('');
+  const [returnDate, setReturnDate] = useState('');
+  
+  const navigate = useNavigate();
+  const { translations } = useLanguage();
 
-    return (
-        <form onSubmit={handleSearch} className="p-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-            <div className="md:col-span-1">
-                <label htmlFor="location" className="block text-sm font-medium text-slate-700">{t('searchFormLocation')}</label>
-                <div className="relative mt-1">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                    <select id="location" value={location} onChange={(e) => setLocation(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white">
-                        <option value="">{t('anyLocation')}</option>
-                        {wilayas.map(w => <option key={w} value={w}>{w}</option>)}
-                    </select>
-                </div>
-            </div>
-            <div className="md:col-span-1">
-                <label htmlFor="pickup-date" className="block text-sm font-medium text-slate-700">{t('pickupDate')}</label>
-                <div className="relative mt-1">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                    <input type="date" id="pickup-date" min={today} value={pickupDate} onChange={e => setPickupDate(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white" />
-                </div>
-            </div>
-            <div className="md:col-span-1">
-                <label htmlFor="return-date" className="block text-sm font-medium text-slate-700">{t('returnDate')}</label>
-                <div className="relative mt-1">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                    <input type="date" id="return-date" min={pickupDate || today} value={returnDate} onChange={(e) => setReturnDate(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 bg-white" />
-                </div>
-            </div>
-            <div className="md:col-span-1">
-                <button type="submit" className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                    <Search size={20} className="mr-2" /> {t('searchButton')}
-                </button>
-            </div>
-        </form>
-    );
-}
+  const handleWilayaChange = (e, type) => {
+    const selectedWilayaName = e.target.value;
+    if (type === 'pickup') {
+      setPickupWilaya(selectedWilayaName);
+      setPickupBaladiya('');
+      const selectedWilayaData = wilayas.find(w => w.name === selectedWilayaName);
+      setAvailablePickupBaladiyates(selectedWilayaData ? selectedWilayaData.baladiyates : []);
+    } else {
+      setReturnWilaya(selectedWilayaName);
+      setReturnBaladiya('');
+      const selectedWilayaData = wilayas.find(w => w.name === selectedWilayaName);
+      setAvailableReturnBaladiyates(selectedWilayaData ? selectedWilayaData.baladiyates : []);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const searchParams = new URLSearchParams({
+      pickupLocation: `${pickupWilaya}, ${pickupBaladiya}`,
+      returnLocation: `${returnWilaya}, ${returnBaladiya}`,
+      pickupDate,
+      returnDate,
+    }).toString();
+    navigate(`/search?${searchParams}`);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+      {/* Pickup Location */}
+      <div className="col-span-1 md:col-span-1">
+        <label className="block text-sm font-medium text-gray-700">{translations.pickupLocation}</label>
+        <div className="flex space-x-2 mt-1">
+          <select value={pickupWilaya} onChange={(e) => handleWilayaChange(e, 'pickup')} required className="block w-1/2 p-2 border border-gray-300 rounded-md">
+            <option value="">{translations.selectWilaya}</option>
+            {wilayas.map(w => <option key={w.code} value={w.name}>{w.name}</option>)}
+          </select>
+          <select value={pickupBaladiya} onChange={(e) => setPickupBaladiya(e.target.value)} required disabled={!pickupWilaya} className="block w-1/2 p-2 border border-gray-300 rounded-md disabled:bg-gray-200">
+            <option value="">{translations.selectBaladiya}</option>
+            {availablePickupBaladiyates.map(b => <option key={b} value={b}>{b}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* Return Location */}
+       <div className="col-span-1 md:col-span-1">
+        <label className="block text-sm font-medium text-gray-700">{translations.returnLocation}</label>
+        <div className="flex space-x-2 mt-1">
+          <select value={returnWilaya} onChange={(e) => handleWilayaChange(e, 'return')} required className="block w-1/2 p-2 border border-gray-300 rounded-md">
+            <option value="">{translations.selectWilaya}</option>
+            {wilayas.map(w => <option key={w.code} value={w.name}>{w.name}</option>)}
+          </select>
+          <select value={returnBaladiya} onChange={(e) => setReturnBaladiya(e.target.value)} required disabled={!returnWilaya} className="block w-1/2 p-2 border border-gray-300 rounded-md disabled:bg-gray-200">
+            <option value="">{translations.selectBaladiya}</option>
+            {availableReturnBaladiyates.map(b => <option key={b} value={b}>{b}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* Dates & Submit */}
+      <div className="col-span-1 md:col-span-1 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <div>
+          <label htmlFor="pickupDate" className="block text-sm font-medium text-gray-700">{translations.pickupDate}</label>
+          <input type="date" id="pickupDate" value={pickupDate} onChange={(e) => setPickupDate(e.target.value)} required className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
+        </div>
+        <div>
+          <label htmlFor="returnDate" className="block text-sm font-medium text-gray-700">{translations.returnDate}</label>
+          <input type="date" id="returnDate" value={returnDate} onChange={(e) => setReturnDate(e.target.value)} required className="mt-1 block w-full p-2 border border-gray-300 rounded-md" />
+        </div>
+        <button type="submit" className="bg-blue-500 text-white p-2 rounded-md w-full hover:bg-blue-600">{translations.search}</button>
+      </div>
+    </form>
+  );
+};
+
+export default SearchForm;
