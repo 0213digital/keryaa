@@ -24,6 +24,11 @@ const Navbar = () => {
   const getLinkClass = ({ isActive }) =>
     `px-3 py-2 rounded-md text-sm font-medium ${isActive ? 'bg-blue-100 text-blue-700' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-900'}`;
 
+  const buttonClasses = {
+    primary: "px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors",
+    secondary: "px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-md hover:bg-slate-200"
+  };
+
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4">
@@ -42,16 +47,16 @@ const Navbar = () => {
             {session ? (
               <>
                 <NavLink to="/dashboard/profile" className={getLinkClass}>{translations.dashboard}</NavLink>
-                <button onClick={handleLogout} className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                <button onClick={handleLogout} className={buttonClasses.primary}>
                   {translations.logout}
                 </button>
               </>
             ) : (
               <div className="space-x-2">
-                <Link to="/login" className="px-4 py-2 text-sm font-medium text-slate-700 rounded-md hover:bg-slate-100">
+                <Link to="/login" className={buttonClasses.secondary}>
                   {translations.login}
                 </Link>
-                <Link to="/signup" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                <Link to="/signup" className={buttonClasses.primary}>
                   {translations.signUp}
                 </Link>
               </div>
