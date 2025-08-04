@@ -12,22 +12,12 @@ const AgencyBookingsPage = () => {
   useEffect(() => {
     const fetchBookings = async () => {
       if (user) {
+        setLoading(true);
         try {
-          setLoading(true);
-          const { data: vehicles, error: vehiclesError } = await supabase
-            .from('vehicles')
-            .select('id')
-            .eq('agency_id', user.id);
-
+          const { data: vehicles, error: vehiclesError } = await supabase.from('vehicles').select('id').eq('agency_id', user.id);
           if (vehiclesError) throw vehiclesError;
-
           const vehicleIds = vehicles.map(v => v.id);
-
-          const { data, error } = await supabase
-            .from('bookings')
-            .select('*, vehicles(*), profiles(*)')
-            .in('vehicle_id', vehicleIds);
-
+          const { data, error } = await supabase.from('bookings').select('*, vehicles(*), profiles(*)').in('vehicle_id', vehicleIds);
           if (error) throw error;
           setBookings(data);
         } catch (error) {
@@ -40,23 +30,23 @@ const AgencyBookingsPage = () => {
     fetchBookings();
   }, [user]);
 
-  if (loading) {
-    return <div>{translations.loading}...</div>;
-  }
-
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">{translations.agencyBookings}</h1>
-      <div className="space-y-4">
-        {bookings.length > 0 ? (
+    <div className="p-4 sm:p-6">
+      <h1 className="text-3xl font-bold text-slate-800 mb-8">{translations.agencyBookings}</h1>
+      <div className="space-y-6">
+        {loading ? <p>{translations.loading}...</p> : bookings.length > 0 ? (
           bookings.map(booking => (
-            <div key={booking.id} className="p-4 border rounded-lg shadow-sm">
-              <h2 className="text-xl font-semibold">{booking.vehicles.make} {booking.vehicles.model}</h2>
-              <p>{translations.bookedBy}: {booking.profiles.full_name}</p>
-              <p>{translations.email}: {booking.profiles.email}</p>
-              <p>{translations.startDate}: {new Date(booking.start_date).toLocaleDateString()}</p>
-              <p>{translations.endDate}: {new Date(booking.end_date).toLocaleDateString()}</p>
-              <p>{translations.totalPrice}: ${booking.total_price}</p>
+            <div key={booking.id} className="bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-800">{booking.vehicles.make} {booking.vehicles.model}</h2>
+                  <p className="text-sm text-slate-500">{translations.bookedBy}: <strong>{booking.profiles.full_name}</strong> ({booking.profiles.email})</p>
+                </div>
+                <div className="text-left sm:text-right">
+                  <p className="text-lg font-bold text-slate-900">${booking.total_price}</p>
+                  <p className="text-sm text-slate-500">{new Date(booking.start_date).toLocaleDateString()} - {new Date(booking.end_date).toLocaleDateString()}</p>
+                </div>
+              </div>
             </div>
           ))
         ) : (

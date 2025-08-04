@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { useAppContext } from '../../contexts/AppContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { Link } from 'react-router-dom';
 
 const UserBookingsPage = () => {
   const { user } = useAppContext();
@@ -16,10 +17,9 @@ const UserBookingsPage = () => {
         try {
           const { data, error } = await supabase
             .from('bookings')
-            .select('*, vehicles(*)') // Fetch booking and related vehicle info
+            .select('*, vehicles(*)')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false });
-
           if (error) throw error;
           setBookings(data);
         } catch (error) {
@@ -29,7 +29,6 @@ const UserBookingsPage = () => {
         }
       }
     };
-
     fetchUserBookings();
   }, [user]);
 
@@ -38,23 +37,23 @@ const UserBookingsPage = () => {
   }
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-md">
-      <h1 className="text-2xl font-bold mb-4">{translations.myBookings}</h1>
-      <div className="space-y-4">
+    <div className="p-4 sm:p-6">
+      <h1 className="text-3xl font-bold text-slate-800 mb-8">{translations.myBookings}</h1>
+      <div className="space-y-6">
         {bookings.length > 0 ? (
           bookings.map(booking => (
-            <div key={booking.id} className="flex flex-col md:flex-row items-center p-4 border rounded-lg gap-4">
-              <img src={booking.vehicles.image_url} alt={booking.vehicles.make} className="w-32 h-20 object-cover rounded-md"/>
+            <div key={booking.id} className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex flex-col sm:flex-row items-center gap-6">
+              <img src={booking.vehicles.image_url} alt={booking.vehicles.make} className="w-full sm:w-40 h-32 sm:h-24 object-cover rounded-lg"/>
               <div className="flex-grow">
-                <h2 className="text-xl font-semibold">{booking.vehicles.make} {booking.vehicles.model}</h2>
-                <p className="text-sm text-gray-600">
-                  {translations.from} {new Date(booking.start_date).toLocaleDateString()} {translations.to} {new Date(booking.end_date).toLocaleDateString()}
+                <h2 className="text-xl font-bold text-slate-800">{booking.vehicles.make} {booking.vehicles.model}</h2>
+                <p className="text-sm text-slate-500 mt-1">
+                  {translations.from} <strong>{new Date(booking.start_date).toLocaleDateString()}</strong> {translations.to} <strong>{new Date(booking.end_date).toLocaleDateString()}</strong>
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-lg font-bold">${booking.total_price}</p>
-                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                  booking.status === 'confirmed' ? 'bg-green-200 text-green-800' : 'bg-yellow-200 text-yellow-800'
+                <p className="text-xl font-bold text-slate-900">${booking.total_price}</p>
+                <span className={`mt-1 inline-block px-3 py-1 text-xs font-semibold rounded-full ${
+                  booking.status === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                 }`}>
                   {translations[booking.status] || booking.status}
                 </span>
@@ -62,7 +61,13 @@ const UserBookingsPage = () => {
             </div>
           ))
         ) : (
-          <p>{translations.noBookingsFound}</p>
+          <div className="text-center py-16 px-6 bg-white rounded-lg shadow-sm border border-slate-200">
+            <h3 className="text-xl font-semibold text-slate-800">{translations.noBookingsFound}</h3>
+            <p className="mt-2 text-slate-600">{translations.startBySearching}</p>
+            <Link to="/search" className="mt-4 inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700">
+              {translations.searchForACar}
+            </Link>
+          </div>
         )}
       </div>
     </div>
